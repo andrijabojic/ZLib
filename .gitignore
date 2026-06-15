@@ -1,0 +1,31 @@
+# --- ANDROID ---
+.gradle/
+.idea/
+build/
+app/build/
+local.properties
+*.iml
+.DS_Store
+*.hprof
+.externalNativeBuild/
+.cxx/
+
+# --- .NET / C# ---
+# Build rezultati
+bin/
+obj/
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+# Ostalo
+*.pdb
+*.log
+[Tt]est[Rr]esult*/
+
+# --- OS / Ostalo ---
+.DS_Store
+Thumbs.db

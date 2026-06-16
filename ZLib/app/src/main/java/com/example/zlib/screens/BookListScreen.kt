@@ -29,6 +29,12 @@ fun BookListScreen(
 ) {
     val books by viewModel.books.collectAsState()
 
+    val recommendations = remember(books) {
+        books.shuffled()
+            .filter { it.status != BookStatus.Reading && it.status != BookStatus.Finished }
+            .take(3)
+    }
+
     val readingBooks = remember(books) { books.filter { it.status == BookStatus.Reading } }
 
     LaunchedEffect(Unit) {
@@ -78,13 +84,13 @@ fun BookListScreen(
 
             item {
                 Text(
-                    text = "Sve knjige",
+                    text = "Preporuka za danas",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
                 )
             }
 
-            items(books) { book ->
+            items(recommendations) { book ->
                 BookCard(book)
             }
         }
@@ -94,14 +100,15 @@ fun BookListScreen(
 @Composable
 fun BookCard(book: Book) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = book.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(text = "Autor: ${book.author}", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Strana: ${book.currentPage} / ${book.pageCount}", style = MaterialTheme.typography.bodySmall)
+            Text(text = book.author, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

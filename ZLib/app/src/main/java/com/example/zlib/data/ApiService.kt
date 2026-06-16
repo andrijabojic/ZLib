@@ -18,7 +18,7 @@ interface ApiService {
     suspend fun addBook(@Body book: BookCreateDto): Book
 
     @PATCH("api/Books/Update-Progress/{id}")
-    suspend fun updateProgress(@Path("id") id: Int, @Body currentPage: Int): Unit
+    suspend fun updateProgress(@Path("id") id: Int, @Body currentPage: Int): retrofit2.Response<Unit>
 
     @PATCH("api/Books/Update-Status/{id}")
     suspend fun updateStatus(@Path("id") id: Int, @Body newStatus: Int): Unit

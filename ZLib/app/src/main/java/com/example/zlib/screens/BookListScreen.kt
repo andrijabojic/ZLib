@@ -2,6 +2,7 @@ package com.example.zlib.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -77,7 +78,7 @@ fun BookListScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(readingBooks) { book ->
-                        BookCarouselItem(book, isLarge = true)
+                        BookCarouselItem(book, isLarge = true, viewModel)
                     }
                 }
             }
@@ -113,23 +114,42 @@ fun BookCard(book: Book) {
     }
 }
 @Composable
-fun BookCarousel(books: List<Book>) {
+fun BookCarousel(books: List<Book>, viewModel: BookViewModel) {
     LazyRow(
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(books) { book ->
-            BookCarouselItem(book)
+            BookCarouselItem(book = book, viewModel = viewModel)
         }
     }
 }
 @Composable
-fun BookCarouselItem(book: Book, isLarge: Boolean = false) {
+fun BookCarouselItem(book: Book,
+                     isLarge: Boolean = false,
+                     viewModel: BookViewModel) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    val books by viewModel.books.collectAsState()
+
+    val currentBook = books.find { it.id == book.id } ?: book
+
+    if (showDialog) {
+        UpdatePageDialog(
+            book = currentBook,
+            onDismiss = { showDialog = false },
+            onConfirm = { newPage ->
+                viewModel.updateProgress(book.id, newPage)
+                showDialog = false
+            }
+        )
+    }
     Card(
         modifier = Modifier
             .width(if (isLarge) 200.dp else 160.dp)
             .height(if (isLarge) 300.dp else 240.dp)
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { showDialog = true },
         shape = RoundedCornerShape(16.dp)
     ) {
         Box(contentAlignment = Alignment.BottomStart) {
@@ -138,6 +158,16 @@ fun BookCarouselItem(book: Book, isLarge: Boolean = false) {
                 contentDescription = "Slika knjige",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+            Text(
+                text = "${book.currentPage}/${book.pageCount}",
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall
             )
 
             Text(
@@ -151,4 +181,43 @@ fun BookCarouselItem(book: Book, isLarge: Boolean = false) {
             )
         }
     }
+}
+@Composable
+fun UpdatePageDialog(
+    book: Book,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var textValue by remember(book.currentPage) {
+        mutableStateOf(book.currentPage.toString())
+    }
+    LaunchedEffect(book.currentPage) {
+        textValue = book.currentPage.toString()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Ažuriraj napredak") },
+        text = {
+            Column {
+                Text("Knjiga: ${book.title}")
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = textValue,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) textValue = it },
+                    label = { Text("Trenutna stranica") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(textValue.toIntOrNull() ?: 0) }) {
+                Text("Sačuvaj")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Odustani")
+            }
+        }
+    )
 }

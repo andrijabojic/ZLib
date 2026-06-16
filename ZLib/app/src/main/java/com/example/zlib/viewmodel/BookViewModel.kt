@@ -20,7 +20,6 @@ class BookViewModel : ViewModel() {
                 val response = RetrofitClient.instance.getBooks()
                 _books.value = response
             } catch (e: Exception) {
-                // Ovde možeš da loguješ grešku
                 e.printStackTrace()
             }
         }

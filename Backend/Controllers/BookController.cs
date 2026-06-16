@@ -10,11 +10,47 @@ namespace Backend.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly AppDbContext _context;
 
-        public BooksController(AppDbContext context)
+        public BooksController(AppDbContext context, IHttpClientFactory httpClientFactory)
         {
+            _httpClientFactory = httpClientFactory;
             _context = context;
+        }
+        [HttpGet("Search-By-Isbn/{isbn}")]
+        public async Task<ActionResult<Book>> GetBookByIsbn(string isbn)
+        {
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.Isbn == isbn);
+            if (book != null) return Ok(book);
+
+            var apiKey = Environment.GetEnvironmentVariable("API_KEY");
+
+            if (string.IsNullOrEmpty(apiKey))
+                return StatusCode(500, "API ključ nije podešen.");
+
+            var client = _httpClientFactory.CreateClient();
+            var url = $"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={apiKey}";
+            
+            var response = await client.GetFromJsonAsync<GoogleBooksResponse>(url);
+
+            var item = response?.Items?.FirstOrDefault();
+            if (item == null) return NotFound("Knjiga nije pronađena.");
+
+            var newBook = new Book
+            {
+                Title = item.VolumeInfo.Title,
+                Author = item.VolumeInfo.Authors?.FirstOrDefault() ?? "Nepoznat autor",
+                Isbn = isbn,
+                PageCount = item.VolumeInfo.PageCount ?? 0,
+                Description = item.VolumeInfo.Description,
+                Status = BookStatus.Unread
+            };
+
+            _context.Books.Add(newBook);
+            await _context.SaveChangesAsync();
+
+            return Ok(newBook);
         }
 
         [HttpGet("Get-Books")]
@@ -101,5 +137,22 @@ namespace Backend.Controllers
 
             return NoContent();
         }
+    }
+    public class GoogleBooksResponse 
+    { 
+        public List<BookItem>? Items { get; set; } 
+    }
+
+    public class BookItem 
+    { 
+        public VolumeInfo VolumeInfo { get; set; } = null!; 
+    }
+
+    public class VolumeInfo 
+    { 
+        public string Title { get; set; } = ""; 
+        public List<string>? Authors { get; set; } 
+        public int? PageCount { get; set; }
+        public string? Description { get; set; }
     }
 }

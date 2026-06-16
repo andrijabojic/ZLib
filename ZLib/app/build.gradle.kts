@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.zlab"
+        applicationId = "com.example.zlib"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -25,4 +25,7 @@ interface ApiService {
 
     @DELETE("api/Books/Delete-Book/{id}")
     suspend fun deleteBook(@Path("id") id: Int): Unit
+
+    @GET("api/Books/Search-By-Isbn/{isbn}")
+    suspend fun getBookByIsbn(@Path("isbn") isbn: String): Book
 }

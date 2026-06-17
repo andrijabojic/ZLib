@@ -29,3 +29,6 @@ obj/
 # --- OS / Ostalo ---
 .DS_Store
 Thumbs.db
+
+# --- ENVIRONMENT ---
+.env

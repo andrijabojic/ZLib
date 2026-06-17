@@ -7,9 +7,10 @@ data class Book(
     @SerializedName("author") val author: String,
     @SerializedName("pageCount") val pageCount: Int,
     @SerializedName("currentPage") val currentPage: Int = 0,
+    @SerializedName("isbn") val isbn: String,
     @SerializedName("status") val statusInt: Int = 1,
     @SerializedName("description") val description: String? = null
-){// Ovo je property koji ćeš koristiti u UI-ju
+){
     val status: BookStatus
         get() = BookStatus.fromInt(statusInt)
 }

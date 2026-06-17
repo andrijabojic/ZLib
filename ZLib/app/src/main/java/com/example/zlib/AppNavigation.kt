@@ -21,7 +21,9 @@ fun AppNavigation() {
 
         composable("addBook") {
             AddBookScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+
             )
         }
     }

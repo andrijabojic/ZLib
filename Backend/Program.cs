@@ -26,6 +26,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseStaticFiles();
 app.MapControllers();
 
 app.Run();

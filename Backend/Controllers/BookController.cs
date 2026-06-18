@@ -11,12 +11,14 @@ namespace Backend.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IWebHostEnvironment _env;
         private readonly AppDbContext _context;
 
-        public BooksController(AppDbContext context, IHttpClientFactory httpClientFactory)
+        public BooksController(AppDbContext context, IHttpClientFactory httpClientFactory, IWebHostEnvironment env)
         {
             _httpClientFactory = httpClientFactory;
             _context = context;
+            _env = env;
         }
         [HttpGet("Search-By-Isbn/{isbn}")]
         public async Task<ActionResult<Book>> GetBookByIsbn(string isbn)
@@ -136,6 +138,29 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+        
+        [HttpPost("Upload-Cover/{id}")]
+        public async Task<IActionResult> UploadCover(int id, IFormFile file)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound("Knjiga nije pronađena.");
+
+            var uploadFolder = Path.Combine(_env.WebRootPath, "uploads", "covers");
+            if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            book.ImagePath = fileName;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { fileName });
         }
     }
     public class GoogleBooksResponse 

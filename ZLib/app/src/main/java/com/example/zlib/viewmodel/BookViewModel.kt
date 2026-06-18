@@ -1,5 +1,6 @@
 package com.example.zlib.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.zlib.data.Book
@@ -18,10 +19,12 @@ class BookViewModel : ViewModel() {
     fun fetchBooks() {
         viewModelScope.launch {
             try {
+                Log.d("MOJ_LOG", "Pokušavam dohvatanje knjiga...")
                 val response = RetrofitClient.instance.getBooks()
+                Log.d("MOJ_LOG", "Uspelo! Dobio sam ${response.size} knjiga.")
                 _books.value = response
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("MOJ_LOG", "GRESKA PRI POZIVU: ${e.message}", e)
             }
         }
     }

@@ -2,9 +2,11 @@ package com.example.zlib.data
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.example.zlib.BuildConfig
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:5265/"
+
+    private const val BASE_URL = "http://${BuildConfig.SERVER_IP}:5000/"
 
     val instance: ApiService by lazy {
         Retrofit.Builder()

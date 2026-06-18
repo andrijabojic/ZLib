@@ -15,11 +15,25 @@ import com.example.zlib.data.Book
 import com.example.zlib.data.BookCreateDto
 import com.example.zlib.viewmodel.BookViewModel
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.navigation.NavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun AddBookScreen(viewModel: BookViewModel = viewModel(), onNavigateBack: () -> Unit,onCancel: () -> Unit) {
+fun AddBookScreen(viewModel: BookViewModel = viewModel(), navController: NavController, onNavigateBack: () -> Unit, onNavigateToScanner: () -> Unit ) {
     var isbnInput by remember { mutableStateOf("") }
+    val savedState = navController.currentBackStackEntry?.savedStateHandle
+    val scannedIsbn = savedState?.getLiveData<String>("scanned_isbn")?.observeAsState()
+    LaunchedEffect(scannedIsbn?.value) {
+        scannedIsbn?.value?.let { isbn ->
+            isbnInput = isbn
+            viewModel.searchBook(isbn)
+            savedState?.remove<String>("scanned_isbn")
+        }
+    }
     val searchState by viewModel.searchState.collectAsState()
     Scaffold(
         topBar = {
@@ -42,7 +56,12 @@ fun AddBookScreen(viewModel: BookViewModel = viewModel(), onNavigateBack: () -> 
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
                 Row {
-                    IconButton(onClick = { /* TODO: Implementiraj otvaranje kamere */ }) {
+                    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+                    IconButton(onClick = {if (cameraPermissionState.status.isGranted) {
+                        onNavigateToScanner()
+                    } else {
+                        cameraPermissionState.launchPermissionRequest()
+                    }}) {
                         Icon(Icons.Default.CameraAlt, contentDescription = "Skeniraj ISBN")
                     }
                     IconButton(onClick = { viewModel.searchBook(isbnInput) }) {

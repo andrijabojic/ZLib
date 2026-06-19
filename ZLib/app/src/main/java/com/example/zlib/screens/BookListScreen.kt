@@ -22,6 +22,8 @@ import com.example.zlib.data.Book
 import com.example.zlib.viewmodel.BookViewModel
 import com.example.zlib.R
 import com.example.zlib.data.BookStatus
+import coil.compose.AsyncImage
+import com.example.zlib.BuildConfig
 
 @Composable
 fun BookListScreen(
@@ -153,9 +155,14 @@ fun BookCarouselItem(book: Book,
         shape = RoundedCornerShape(16.dp)
     ) {
         Box(contentAlignment = Alignment.BottomStart) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_book_placeholder),
+            val baseUrl = "http://${BuildConfig.SERVER_IP}:5000/uploads/covers/"
+            val fullImageUrl = book.imagePath?.let { baseUrl + it }
+
+            AsyncImage(
+                model = fullImageUrl,
                 contentDescription = "Slika knjige",
+                placeholder = painterResource(id = R.drawable.ic_book_placeholder),
+                error = painterResource(id = R.drawable.ic_book_placeholder),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )

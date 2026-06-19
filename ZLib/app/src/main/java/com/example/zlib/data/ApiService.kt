@@ -5,7 +5,12 @@ import retrofit2.http.POST
 import retrofit2.http.PATCH
 import retrofit2.http.DELETE
 import retrofit2.http.Body
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import retrofit2.http.Path
+import okhttp3.MultipartBody
+import retrofit2.Response
+import retrofit2.http.*
 
 interface ApiService {
     @GET("api/Books/Get-Books")
@@ -28,4 +33,11 @@ interface ApiService {
 
     @GET("api/Books/Search-By-Isbn/{isbn}")
     suspend fun getBookByIsbn(@Path("isbn") isbn: String): Book
+
+    @Multipart
+    @POST("api/Books/Upload-Cover/{id}")
+    suspend fun uploadCover(
+        @Path("id") bookId: Int,
+        @Part file: MultipartBody.Part
+    ): Response<Map<String, String>>
 }

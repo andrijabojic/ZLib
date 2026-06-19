@@ -1,5 +1,10 @@
 package com.example.zlib.screens
 
+import android.app.Activity
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,10 +21,14 @@ import com.example.zlib.data.BookCreateDto
 import com.example.zlib.viewmodel.BookViewModel
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -27,6 +36,8 @@ fun AddBookScreen(viewModel: BookViewModel = viewModel(), navController: NavCont
     var isbnInput by remember { mutableStateOf("") }
     val savedState = navController.currentBackStackEntry?.savedStateHandle
     val scannedIsbn = savedState?.getLiveData<String>("scanned_isbn")?.observeAsState()
+    val context = LocalContext.current
+
     LaunchedEffect(scannedIsbn?.value) {
         scannedIsbn?.value?.let { isbn ->
             isbnInput = isbn
@@ -34,6 +45,32 @@ fun AddBookScreen(viewModel: BookViewModel = viewModel(), navController: NavCont
             savedState?.remove<String>("scanned_isbn")
         }
     }
+
+    val scanner = remember {
+        GmsDocumentScanning.getClient(
+            GmsDocumentScannerOptions.Builder()
+                .setGalleryImportAllowed(true)
+                .setPageLimit(1)
+                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                .build()
+        )
+    }
+
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            scanningResult?.pages?.let { pages ->
+                if (pages.isNotEmpty()) {
+                    val imageUri = pages[0].imageUri
+                    viewModel.setTempImageUri(imageUri)
+                    Log.d("SCANNER", "Slika sačuvana na: $imageUri")
+                }
+            }
+        }
+    }
+
     val searchState by viewModel.searchState.collectAsState()
     Scaffold(
         topBar = {
@@ -47,52 +84,70 @@ fun AddBookScreen(viewModel: BookViewModel = viewModel(), navController: NavCont
             )
         }
     ) { paddingValues ->
-    Column(modifier = Modifier.padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState())) {
 
-        OutlinedTextField(
-            value = isbnInput,
-            onValueChange = { isbnInput = it },
-            label = { Text("Unesite ISBN") },
-            modifier = Modifier.fillMaxWidth(),
-            trailingIcon = {
-                Row {
-                    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
-                    IconButton(onClick = {if (cameraPermissionState.status.isGranted) {
-                        onNavigateToScanner()
-                    } else {
-                        cameraPermissionState.launchPermissionRequest()
-                    }}) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = "Skeniraj ISBN")
-                    }
-                    IconButton(onClick = { viewModel.searchBook(isbnInput) }) {
-                        Icon(Icons.Default.Search, contentDescription = "Pretraži")
+            OutlinedTextField(
+                value = isbnInput,
+                onValueChange = { isbnInput = it },
+                label = { Text("Unesite ISBN") },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    Row {
+                        val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+                        IconButton(onClick = {if (cameraPermissionState.status.isGranted) {
+                            onNavigateToScanner()
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }}) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = "Skeniraj ISBN")
+                        }
+                        IconButton(onClick = { viewModel.searchBook(isbnInput) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Pretraži")
+                        }
                     }
                 }
-            }
-        )
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        when (val state = searchState) {
-            is BookViewModel.BookSearchState.Found -> {
-                BookForm(
-                    initialBook = state.book,
-                    onAdded = { viewModel.resetSearchState() },
-                    onCancel = { viewModel.resetSearchState() }
-                )
+            when (val state = searchState) {
+                is BookViewModel.BookSearchState.Found -> {
+                    BookForm(
+                        initialBook = state.book,
+                        onAdded = {dto ->
+                            viewModel.addBookWithCover(context, dto)
+                            onNavigateBack()
+                        },
+                        onCancel = { viewModel.resetSearchState() },
+                        onScanClick = {
+                            scanner.getStartScanIntent(context as Activity)
+                                .addOnSuccessListener { intentSender ->
+                                    scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                }
+                        }
+                    )
+                }
+                is BookViewModel.BookSearchState.NotFound -> {
+                    BookForm(
+                        initialIsbn = state.isbn,
+                        onAdded = {dto ->
+                            viewModel.addBookWithCover(context, dto)
+                            onNavigateBack()
+                        },
+                        onCancel = { viewModel.resetSearchState() },
+                        onScanClick = {
+                            scanner.getStartScanIntent(context as Activity)
+                                .addOnSuccessListener { intentSender ->
+                                    scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                }
+                        }
+                    )
+                }
+                is BookViewModel.BookSearchState.Error -> {
+                    Text("Greška: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+                else -> {}
             }
-            is BookViewModel.BookSearchState.NotFound -> {
-                BookForm(
-                    initialIsbn = state.isbn,
-                    onAdded = { viewModel.resetSearchState() },
-                    onCancel = { viewModel.resetSearchState() }
-                )
-            }
-            is BookViewModel.BookSearchState.Error -> {
-                Text("Greška: ${state.message}", color = MaterialTheme.colorScheme.error)
-            }
-            else -> {}
-        }
         }
     }
 }
@@ -101,9 +156,9 @@ fun AddBookScreen(viewModel: BookViewModel = viewModel(), navController: NavCont
 fun BookForm(
     initialBook: Book? = null,
     initialIsbn: String? = null,
-    viewModel: BookViewModel = viewModel(),
-    onAdded: () -> Unit,
-    onCancel: () -> Unit
+    onAdded: (BookCreateDto) -> Unit,
+    onCancel: () -> Unit,
+    onScanClick: () -> Unit
 ) {
     var title by remember { mutableStateOf(initialBook?.title ?: "") }
     var author by remember { mutableStateOf(initialBook?.author ?: "") }
@@ -117,6 +172,9 @@ fun BookForm(
         OutlinedTextField(value = author, onValueChange = { author = it }, label = { Text("Autor") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(value = isbn, onValueChange = { isbn = it }, label = { Text("ISBN") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(value = pageCount, onValueChange = { pageCount = it }, label = { Text("Broj stranica") }, modifier = Modifier.fillMaxWidth())
+        Button(onClick = { onScanClick() }) {
+            Text("Slikaj korice")
+        }
 
         Row(
             modifier = Modifier
@@ -141,8 +199,7 @@ fun BookForm(
                         description = "",
                         imagePath = ""
                     )
-                    viewModel.addBook(newBook)
-                    onAdded()
+                    onAdded(newBook)
                 },
                 modifier = Modifier.weight(1f)
             ) {

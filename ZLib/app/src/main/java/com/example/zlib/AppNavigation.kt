@@ -32,7 +32,7 @@ fun AppNavigation() {
             IsbnScannerScreen(
                 onBarcodeScanned = { isbn ->
                     navController.previousBackStackEntry?.savedStateHandle?.set("scanned_isbn", isbn)
-                    navController.popBackStack()
+                    navController.popBackStack("addBook", false)
                 }
             )
         }

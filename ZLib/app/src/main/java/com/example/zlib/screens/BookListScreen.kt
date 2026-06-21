@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,10 +27,12 @@ import com.example.zlib.data.BookStatus
 import coil.compose.AsyncImage
 import com.example.zlib.BuildConfig
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
     viewModel: BookViewModel = viewModel(),
-    onNavigateToAdd: () -> Unit
+    onNavigateToAdd: () -> Unit,
+    onNavigateToSearch: () -> Unit
 ) {
     val books by viewModel.books.collectAsState()
 
@@ -45,6 +49,19 @@ fun BookListScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("ZLib") },
+                actions = {
+                    IconButton(onClick = { onNavigateToSearch() }) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Pretraži knjige"
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onNavigateToAdd() },
@@ -59,13 +76,7 @@ fun BookListScreen(
             contentPadding = PaddingValues(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
-                Text(
-                    text = "ZLib",
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
+
             item {
                 Text(
                     text = "Trenutno citate",

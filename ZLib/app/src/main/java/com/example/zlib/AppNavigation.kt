@@ -5,7 +5,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.zlib.screens.BookListScreen
-import com.example.zlib.screens.AddBookScreen // Ovo ćemo napraviti sledeće
+import com.example.zlib.screens.AddBookScreen
+import com.example.zlib.screens.BookSearchScreen
 import com.example.zlib.screens.IsbnScannerScreen
 
 @Composable
@@ -16,7 +17,8 @@ fun AppNavigation() {
 
         composable("bookList") {
             BookListScreen(
-                onNavigateToAdd = { navController.navigate("addBook") }
+                onNavigateToAdd = { navController.navigate("addBook") },
+                onNavigateToSearch = { navController.navigate("search") }
             )
         }
 
@@ -34,6 +36,11 @@ fun AppNavigation() {
                     navController.previousBackStackEntry?.savedStateHandle?.set("scanned_isbn", isbn)
                     navController.popBackStack("addBook", false)
                 }
+            )
+        }
+        composable("search") {
+            BookSearchScreen(
+                onNavigateBack = {navController.popBackStack()}
             )
         }
     }

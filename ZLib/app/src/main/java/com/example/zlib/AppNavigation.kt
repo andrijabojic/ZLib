@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.zlib.screens.BookListScreen
 import com.example.zlib.screens.AddBookScreen
+import com.example.zlib.screens.BookDetailScreen
 import com.example.zlib.screens.BookSearchScreen
 import com.example.zlib.screens.IsbnScannerScreen
 
@@ -18,7 +19,10 @@ fun AppNavigation() {
         composable("bookList") {
             BookListScreen(
                 onNavigateToAdd = { navController.navigate("addBook") },
-                onNavigateToSearch = { navController.navigate("search") }
+                onNavigateToSearch = { navController.navigate("search") },
+                onBookClick = { bookId ->
+                    navController.navigate("bookDetail/$bookId")
+                }
             )
         }
 
@@ -40,7 +44,18 @@ fun AppNavigation() {
         }
         composable("search") {
             BookSearchScreen(
-                onNavigateBack = {navController.popBackStack()}
+                onNavigateBack = { navController.popBackStack() },
+                onBookClick = { bookId ->
+                    navController.navigate("bookDetail/$bookId")
+                }
+            )
+        }
+        composable("bookDetail/{bookId}") { backStackEntry ->
+            val bookId = backStackEntry.arguments?.getString("bookId")
+            BookDetailScreen(
+                bookId = bookId,
+                onNavigateBack = { navController.popBackStack() },
+                onEditBook = { id:String -> navController.navigate("editBook/$id") },
             )
         }
     }

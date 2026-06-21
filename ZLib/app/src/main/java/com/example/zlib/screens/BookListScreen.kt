@@ -32,7 +32,8 @@ import com.example.zlib.BuildConfig
 fun BookListScreen(
     viewModel: BookViewModel = viewModel(),
     onNavigateToAdd: () -> Unit,
-    onNavigateToSearch: () -> Unit
+    onNavigateToSearch: () -> Unit,
+    onBookClick: (Int) -> Unit
 ) {
     val books by viewModel.books.collectAsState()
 
@@ -105,19 +106,20 @@ fun BookListScreen(
             }
 
             items(recommendations) { book ->
-                BookCard(book)
+                BookCard(book,onClick = { onBookClick(book.id) })
             }
         }
     }
 }
 
 @Composable
-fun BookCard(book: Book) {
+fun BookCard(book: Book, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(bottom = 8.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = book.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)

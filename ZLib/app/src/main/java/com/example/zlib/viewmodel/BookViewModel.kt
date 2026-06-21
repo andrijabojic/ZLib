@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.zlib.data.Book
 import com.example.zlib.data.BookCreateDto
+import com.example.zlib.data.BookStatus
 import com.example.zlib.data.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -121,30 +122,21 @@ class BookViewModel : ViewModel() {
     }
     fun uploadBookCover(context: Context, bookId: Int, uri: Uri) {
         viewModelScope.launch {
-            Log.d("UPLOAD_DEBUG", "Pokrećem upload za ID: $bookId")
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
                 if (inputStream == null) {
-                    Log.e("UPLOAD_DEBUG", "InputStream je null! URI nije validan.")
                     return@launch
                 }
 
                 val file = File(context.cacheDir, "cover_${bookId}.jpg")
                 inputStream.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
-                Log.d("UPLOAD_DEBUG", "Fajl kreiran: ${file.absolutePath}, veličina: ${file.length()}")
 
                 val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
                 val response = apiService.uploadCover(bookId, body)
 
-                if (response.isSuccessful) {
-                    Log.d("UPLOAD_DEBUG", "Uspešno uploadovano na server!")
-                } else {
-                    Log.e("UPLOAD_DEBUG", "Server vratio grešku: ${response.code()} - ${response.errorBody()?.string()}")
-                }
             } catch (e: Exception) {
-                Log.e("UPLOAD_DEBUG", "Exception u upload-u: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -162,5 +154,11 @@ class BookViewModel : ViewModel() {
 
     fun onSearchQueryChange(newQuery: String) {
         _searchQuery.value = newQuery
+    }
+    fun updateStatus(bookId: Int, newStatus: BookStatus) {
+        viewModelScope.launch {
+            apiService.updateStatus(bookId, newStatus.value)
+            fetchBooks()
+        }
     }
 }

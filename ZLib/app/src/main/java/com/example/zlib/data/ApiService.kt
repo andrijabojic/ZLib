@@ -26,7 +26,7 @@ interface ApiService {
     suspend fun updateProgress(@Path("id") id: Int, @Body currentPage: Int): retrofit2.Response<Unit>
 
     @PATCH("api/Books/Update-Status/{id}")
-    suspend fun updateStatus(@Path("id") id: Int, @Body newStatus: Int): Unit
+    suspend fun updateStatus(@Path("id") id: Int, @Body newStatus: Int): Response<Unit>
 
     @DELETE("api/Books/Delete-Book/{id}")
     suspend fun deleteBook(@Path("id") id: Int): Unit

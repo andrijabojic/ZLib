@@ -2,6 +2,7 @@ package com.example.zlib.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,10 +66,13 @@ fun BookListScreen(
                 }
             )
         },
+        floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onNavigateToAdd() },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primary,
+                shape = androidx.compose.foundation.shape.CircleShape,
+                modifier = Modifier.size(64.dp)
             ) {
                 Text("+", color = Color.White)
             }
@@ -177,7 +183,10 @@ fun BookCarouselItem(book: Book,
                 placeholder = painterResource(id = R.drawable.ic_book_placeholder),
                 error = painterResource(id = R.drawable.ic_book_placeholder),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().border(0.5.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
+                    setToSaturation(1.2f)
+                })
             )
             Text(
                 text = "${book.currentPage}/${book.pageCount}",
